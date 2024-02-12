@@ -1,0 +1,81 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+group = 'me.temper'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenLocal()
+    maven {
+        url = uri('https://oss.sonatype.org/content/groups/public/')
+    }
+
+    maven {
+        url = uri('https://maven.enginehub.org/repo/')
+    }
+
+    maven {
+        url = uri('https://mvnrepository.com/repos/central')
+    }
+
+    maven {
+        url = uri('https://repo.extendedclip.com/content/repositories/placeholderapi/')
+    }
+
+    maven {
+        url = uri('https://repo.codemc.org/repository/maven-public/')
+    }
+
+    maven {
+        url = uri('https://jitpack.io')
+    }
+
+
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+
+    maven {
+        name = 'lunarclient'
+        url = 'https://repo.lunarclient.dev'
+    }
+    mavenCentral()
+
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    implementation 'net.jodah:expiringmap:0.5.10'
+    implementation 'org.javatuples:javatuples:1.2'
+    implementation 'org.projectlombok:lombok:1.18.4'
+    implementation "net.kyori:adventure-api:4.15.0"
+    compileOnly 'net.luckperms:api:5.4'
+    compileOnly 'me.clip:placeholderapi:2.11.1'
+    compileOnly 'net.techcable.tacospigot:WineSpigot:1.8.8-R0.2-SNAPSHOT'
+    compileOnly 'org.apache.commons:commons-lang3:3.8.1'
+    compileOnly 'com.github.milkbowl:VaultAPI:1.7'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.26'
+    annotationProcessor 'org.projectlombok:lombok:1.18.26'
+
+    testCompileOnly 'org.projectlombok:lombok:1.18.26'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.26'
+}
+
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from(components.java)
+        }
+    }
+}
+
+
+test {
+    useJUnitPlatform()
+}
