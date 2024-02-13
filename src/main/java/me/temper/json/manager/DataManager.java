@@ -44,6 +44,9 @@ public class DataManager {
      * @param <T>   the type of data to save
      */
     public static <T> void store(String key, T data, StorageMode storageMode) {
+        if (key == null || data == null || fileOps == null) {
+            throw new IllegalArgumentException("Key, data, and fileOps must not be null");
+        }
         switch (storageMode) {
             case MEMORY_ONLY:
                 cache.put(key, data);
