@@ -39,47 +39,48 @@ public class DataManager {
     /**
      * Saves data to the data manager with the specified key.
      *
-     * @param key   the key to use for saving the data
+     * @param filePath the key to use for saving the data
      * @param data  the data to save
      * @param <T>   the type of data to save
      */
-    public static <T> void store(String key, T data, StorageMode storageMode) {
-        if (key == null || data == null || fileOps == null) {
-            throw new IllegalArgumentException("Key, data, and fileOps must not be null");
+    public static <T> void store(String filePath, T data, StorageMode storageMode) {
+        if (filePath == null || data == null || fileOps == null) {
+            throw new IllegalArgumentException("FilePath, data, and fileOps must not be null");
         }
         switch (storageMode) {
             case MEMORY_ONLY:
-                cache.put(key, data);
+                cache.put(filePath, data);
                 break;
             case DISK_ONLY:
-                fileOps.saveAsync(key, data);
+                fileOps.saveAsync(filePath, data);
                 break;
             case CACHE_THEN_DISK:
-                cache.put(key, data);
-                fileOps.saveAsync(key, data);
+                cache.put(filePath, data);
+                fileOps.saveAsync(filePath, data);
                 break;
         }
     }
 
+
     /**
      * Loads data from the data manager with the specified key.
      *
-     * @param key         the key to use for loading the data
+     * @param filePath    the key to use for loading the data
      * @param typeOfT     the type of data to load
      * @param <T>         the type of data to load
      * @return the loaded data, or null if no data was found
      */
-    public static <T> T load(String key, Type typeOfT) {
+    public static <T> T load(String filePath, Type typeOfT, StorageMode storageMode) {
         switch (storageMode) {
             case MEMORY_ONLY:
-                return (T) cache.get(key);
+                return (T) cache.get(filePath);
             case DISK_ONLY:
             case CACHE_THEN_DISK:
-                if (cache.containsKey(key)) {
-                    return (T) cache.get(key);
+                if (cache.containsKey(filePath)) {
+                    return (T) cache.get(filePath);
                 } else {
                     final T[] data = (T[]) new Object[1];
-                    fileOps.loadAsync(key, typeOfT, result -> data[0] = (T) result);
+                    fileOps.loadAsync(filePath, typeOfT, result -> data[0] = (T) result);
                     return data[0];
                 }
         }
@@ -90,12 +91,12 @@ public class DataManager {
      * Clears data from the data manager with the specified key.
      * Also deletes the file from disk if aysnc.
      *
-     * @param key the key of the data to clear
+     * @param filePath the key to use for clearing the data
      */
-    public static void clearData(String key) {
-        cache.remove(key);
+    public static void clearData(String filePath) {
+        cache.remove(filePath);
         // Asynchronous file deletion
-        fileOps.deleteAsync(key);
+        fileOps.deleteAsync(filePath);
     }
 
     /**
