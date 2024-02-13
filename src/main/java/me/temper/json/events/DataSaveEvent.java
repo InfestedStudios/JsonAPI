@@ -1,4 +1,4 @@
-package me.temper.json.events;
+//package me.temper.json.events;
 
 //import org.bukkit.event.Event;
 //import org.bukkit.event.HandlerList;
