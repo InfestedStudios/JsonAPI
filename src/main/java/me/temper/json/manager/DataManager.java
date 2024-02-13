@@ -43,7 +43,7 @@ public class DataManager {
      * @param data  the data to save
      * @param <T>   the type of data to save
      */
-    public static <T> void store(String key, T data) {
+    public static <T> void store(String key, T data, StorageMode storageMode) {
         switch (storageMode) {
             case MEMORY_ONLY:
                 cache.put(key, data);
