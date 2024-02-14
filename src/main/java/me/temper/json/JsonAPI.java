@@ -3,14 +3,22 @@ package me.temper.json;
 import com.google.gson.Gson;
 import lombok.Getter;
 import lombok.Setter;
-import me.temper.json.async.AsyncFileOperations;
 import me.temper.json.storage.StorageMode;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -34,13 +42,22 @@ public class JsonAPI {
     @Getter
     private StorageMode storageMode = StorageMode.CACHE_THEN_DISK;
     private final Map<String, Object> cache = new ConcurrentHashMap<>();
-    private static AsyncFileOperations fileOps;
+    private final ExecutorService executorService;
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+    private static String basePath = "./"; // Default base path
+
+
+    public JsonAPI(String basePath) {
+        this.basePath = basePath; // Set base path through constructor
+        this.executorService = Executors.newCachedThreadPool();
+    }
+
 
     /**
      * Returns the single instance of the JsonAPI.
      */
     public static JsonAPI getInstance() {
-        return new JsonAPI();
+        return new JsonAPI(basePath);
     }
 
     /**
@@ -59,7 +76,7 @@ public class JsonAPI {
                 break;
             case CACHE_THEN_DISK:
                 cache.put(fileName, data);
-                fileOps.saveAsync(fileName, data);
+                saveAsync(fileName, data);
                 break;
         }
     }
@@ -80,11 +97,11 @@ public class JsonAPI {
                     cache.put(key, transformedData);
                     break;
                 case DISK_ONLY:
-                    fileOps.saveAsync(key, transformedData);
+                    saveAsync(key, transformedData);
                     break;
                 case CACHE_THEN_DISK:
                     cache.put(key, transformedData);
-                    fileOps.saveAsync(key, transformedData);
+                    saveAsync(key, transformedData);
                     break;
             }
         } else {
@@ -109,7 +126,7 @@ public class JsonAPI {
                 if (cache.containsKey(fileName)) {
                     callback.accept(typeOfT.cast(cache.get(fileName)));
                 } else {
-                    fileOps.loadAsync(fileName, typeOfT, callback);
+                    loadAsync(fileName, typeOfT, callback);
                 }
                 break;
         }
@@ -135,7 +152,7 @@ public class JsonAPI {
                     data = (T) cache.get(key);
                 } else {
                     final T[] tempData = (T[]) new Object[1];
-                    fileOps.loadAsync(key, typeOfT, result -> tempData[0] = (T) result);
+                    loadAsync(key, typeOfT, result -> tempData[0] = (T) result);
                     data = tempData[0];
                 }
                 break;
@@ -164,7 +181,8 @@ public class JsonAPI {
      */
     private <T> void saveToFile(String fileName, T data) {
         try {
-            File file = new File(fileName + ".json");
+            String fullPath = basePath + fileName + ".json"; // Construct full path
+            File file = new File(fullPath);
             if (!file.exists()) {
                 file.getParentFile().mkdirs();
                 file.createNewFile();
@@ -172,6 +190,106 @@ public class JsonAPI {
             try (FileWriter writer = new FileWriter(file)) {
                 gson.toJson(data, writer);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+    /**
+     * Saves data to a file asynchronously.
+     *
+     * @param <T>        the type of data to be saved
+     * @param fileName   the name of the file to be saved to
+     * @param data       the data to be saved
+     */
+    public <T> void saveAsync(String fileName, T data) {
+        executorService.execute(() -> {
+            try {
+                String fullPath = basePath + fileName + ".json"; // Construct full path
+                File file = new File(fullPath);
+                if (!file.exists()) {
+                    file.getParentFile().mkdirs();
+                    file.createNewFile();
+                }
+                try (FileWriter writer = new FileWriter(file)) {
+                    gson.toJson(data, writer);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Loads data from a file asynchronously.
+     *
+     * @param <T>           the type of data to be loaded
+     * @param fileName      the name of the file to be loaded from
+     * @param typeOfT       the type of the data to be loaded
+     * @param callback      the callback to be invoked with the loaded data
+     */
+    public <T> void loadAsync(String fileName, Type typeOfT, Consumer<T> callback) {
+        executorService.execute(() -> {
+            T data = null;
+            try {
+                String fullPath = basePath + fileName + ".json"; // Construct full path
+                File file = new File(fullPath);
+                if (file.exists()) {
+                    try (FileReader reader = new FileReader(file)) {
+                        data = gson.fromJson(reader, typeOfT);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            T finalData = data;
+            executorService.execute(() -> callback.accept(finalData));
+        });
+    }
+
+    /**
+     * Deletes a file asynchronously.
+     *
+     * @param key   the name of the file to be deleted
+     */
+    public void deleteAsync(String key) {
+        executorService.execute(() -> {
+            String fullPath = basePath + key + ".json"; // Construct full path
+            File file = new File(fullPath);
+            if (file.exists()) {
+                file.delete();
+            }
+        });
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Saves a version of the specified data to the data manager.
+     *
+     * @param fileName the name of the file
+     * @param jsonData the JSON data to save
+     */
+    private static void saveVersion(String fileName, String jsonData) {
+        try {
+            String versionTimestamp = dateFormat.format(new Date());
+            String versionedFileName = fileName + "_" + versionTimestamp + ".json";
+            String fullPath = basePath + "versions/" + versionedFileName; // Adjust for version saving
+            File versionDir = new File(basePath + "versions/");
+            if (!versionDir.exists()) {
+                versionDir.mkdirs();
+            }
+            Files.write(Paths.get(fullPath), jsonData.getBytes());
         } catch (Exception e) {
             e.printStackTrace();
         }
