@@ -48,6 +48,7 @@ public class JsonAPI {
 
 
     public JsonAPI(String basePath) {
+        //Implemented fixes for this so it can be used in a plugin
         this.basePath = basePath.endsWith(File.separator) ? basePath : basePath + File.separator; // Ensure basePath ends with separator
         this.executorService = Executors.newCachedThreadPool();
     }
