@@ -46,6 +46,9 @@ public class JsonAPI {
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
     private static String basePath = "./"; // Default base path
 
+    @Getter@Setter
+    public boolean debugMode = false;
+
 
     public JsonAPI(String basePath) {
         //Implemented fixes for this so it can be used in a plugin
@@ -68,6 +71,10 @@ public class JsonAPI {
      * @param data the data to save
      */
     public <T> void store(String fileName, T data, StorageMode storageMode) {
+        if (debugMode) {
+            System.out.println("Storing data to file: " + fileName + " with storage mode: " + storageMode);
+        }
+
         switch (storageMode) {
             case MEMORY_ONLY:
                 cache.put(fileName, data);
@@ -91,6 +98,10 @@ public class JsonAPI {
      * @param transformBeforeStore a function that transforms the data before saving
      */
     public <T> void store(String key, T data, Predicate<T> validator, Function<T, T> transformBeforeStore, StorageMode storageMode) {
+        if (debugMode) {
+            System.out.println("Storing data to file: " + key + " with storage mode: " + storageMode);
+        }
+
         if (validator.test(data)) {
             T transformedData = transformBeforeStore.apply(data);
             switch (storageMode) {
@@ -118,6 +129,9 @@ public class JsonAPI {
      * @param callback a function that is called with the loaded data
      */
     public <T> void load(String fileName, Class<T> typeOfT, java.util.function.Consumer<T> callback, StorageMode storageMode) {
+        if (debugMode) {
+            System.out.println("Loading data from file: " + fileName + " with storage mode: " + storageMode);
+        }
         switch (storageMode) {
             case MEMORY_ONLY:
                 callback.accept(typeOfT.cast(cache.get(fileName)));
@@ -142,6 +156,9 @@ public class JsonAPI {
      * @return the loaded data
      */
     public <T> T load(String key, Type typeOfT, Function<T, T> transformAfterLoad, StorageMode storageMode) {
+        if (debugMode) {
+            System.out.println("Loading data from file: " + key + " with storage mode: " + storageMode);
+        }
         T data = null;
         switch (storageMode) {
             case MEMORY_ONLY:
@@ -167,10 +184,14 @@ public class JsonAPI {
      * @param fileName the name of the file for which to clear data
      */
     public void clearData(String fileName) {
+
         cache.remove(fileName);
         File file = new File(fileName + ".json");
         if (file.exists()) {
             file.delete();
+            if (debugMode) {
+                System.out.println("Cleared data from file: " + fileName + " + Cleared Cache:" + cache);
+            }
         }
     }
 
@@ -207,6 +228,9 @@ public class JsonAPI {
      * @param data       the data to be saved
      */
     public <T> void saveAsync(String fileName, T data) {
+        if (debugMode) {
+            System.out.println("Saving Async data from file: " + fileName + " with storage mode: " + storageMode);
+        }
         executorService.execute(() -> {
             try {
                 String fullPath = basePath + fileName + ".json"; // Construct full path
@@ -233,6 +257,9 @@ public class JsonAPI {
      * @param callback      the callback to be invoked with the loaded data
      */
     public <T> void loadAsync(String fileName, Type typeOfT, Consumer<T> callback) {
+        if (debugMode) {
+            System.out.println("Loading Async data from file: " + fileName + " with storage mode: " + storageMode);
+        }
         executorService.execute(() -> {
             T data = null;
             try {
@@ -257,6 +284,10 @@ public class JsonAPI {
      * @param key   the name of the file to be deleted
      */
     public void deleteAsync(String key) {
+        if (debugMode) {
+            System.out.println("Cleared Async data from file: " + key + " with storage mode: " + storageMode);
+        }
+
         executorService.execute(() -> {
             String fullPath = basePath + key + ".json"; // Construct full path
             File file = new File(fullPath);
@@ -269,19 +300,13 @@ public class JsonAPI {
 
 
 
-
-
-
-
-
-
     /**
      * Saves a version of the specified data to the data manager.
      *
      * @param fileName the name of the file
      * @param jsonData the JSON data to save
      */
-    private static void saveVersion(String fileName, String jsonData) {
+    public static void saveVersion(String fileName, String jsonData) {
         try {
             String versionTimestamp = dateFormat.format(new Date());
             String versionedFileName = fileName + "_" + versionTimestamp + ".json";
