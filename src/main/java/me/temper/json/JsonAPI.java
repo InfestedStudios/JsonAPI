@@ -302,11 +302,11 @@ public class JsonAPI {
 
     /**
      * Saves a version of the specified data to the data manager.
-     *
+     * @param <T> the type of data to save
      * @param fileName the name of the file
      * @param jsonData the JSON data to save
      */
-    public static void saveVersion(String fileName, String jsonData) {
+    public static <T> void saveVersion(String fileName, T jsonData) {
         try {
             String versionTimestamp = dateFormat.format(new Date());
             String versionedFileName = fileName + "_" + versionTimestamp + ".json";
@@ -315,7 +315,27 @@ public class JsonAPI {
             if (!versionDir.exists()) {
                 versionDir.mkdirs();
             }
-            Files.write(Paths.get(fullPath), jsonData.getBytes());
+            Files.write(Paths.get(fullPath), (byte[]) jsonData);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    //Need a method to deleteVersion
+
+    /**
+     *
+     * @param fileName the name of the file to delete
+     */
+    public static void deleteVersion(String fileName) {
+        try {
+            String versionTimestamp = dateFormat.format(new Date());
+            String versionedFileName = fileName + "_" + versionTimestamp + ".json";
+            String fullPath = basePath + "versions/" + versionedFileName; // Adjust for version saving
+            File versionDir = new File(basePath + "versions/");
+            if (versionDir.exists()) {
+                versionDir.delete();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
