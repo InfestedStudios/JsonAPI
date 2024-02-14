@@ -48,7 +48,7 @@ public class JsonAPI {
 
 
     public JsonAPI(String basePath) {
-        this.basePath = basePath; // Set base path through constructor
+        this.basePath = basePath.endsWith(File.separator) ? basePath : basePath + File.separator; // Ensure basePath ends with separator
         this.executorService = Executors.newCachedThreadPool();
     }
 
@@ -66,7 +66,7 @@ public class JsonAPI {
      * @param fileName the name of the file to save to
      * @param data the data to save
      */
-    public <T> void store(String fileName, T data) {
+    public <T> void store(String fileName, T data, StorageMode storageMode) {
         switch (storageMode) {
             case MEMORY_ONLY:
                 cache.put(fileName, data);
@@ -89,7 +89,7 @@ public class JsonAPI {
      * @param validator a function that returns true if the data is valid, or false if it is invalid
      * @param transformBeforeStore a function that transforms the data before saving
      */
-    public <T> void store(String key, T data, Predicate<T> validator, Function<T, T> transformBeforeStore) {
+    public <T> void store(String key, T data, Predicate<T> validator, Function<T, T> transformBeforeStore, StorageMode storageMode) {
         if (validator.test(data)) {
             T transformedData = transformBeforeStore.apply(data);
             switch (storageMode) {
@@ -116,7 +116,7 @@ public class JsonAPI {
      * @param typeOfT the type of data to load
      * @param callback a function that is called with the loaded data
      */
-    public <T> void load(String fileName, Class<T> typeOfT, java.util.function.Consumer<T> callback) {
+    public <T> void load(String fileName, Class<T> typeOfT, java.util.function.Consumer<T> callback, StorageMode storageMode) {
         switch (storageMode) {
             case MEMORY_ONLY:
                 callback.accept(typeOfT.cast(cache.get(fileName)));
@@ -140,7 +140,7 @@ public class JsonAPI {
      * @param transformAfterLoad a function that transforms the data after loading
      * @return the loaded data
      */
-    public <T> T load(String key, Type typeOfT, Function<T, T> transformAfterLoad) {
+    public <T> T load(String key, Type typeOfT, Function<T, T> transformAfterLoad, StorageMode storageMode) {
         T data = null;
         switch (storageMode) {
             case MEMORY_ONLY:
