@@ -12,7 +12,7 @@ An easier system to load and store JSON files without the hassle of all the extr
 - Load files and data quickly and fast
 - Encrypt and Decrypt your data and files
 - Store files in various modes:
-- DISK_ONLY
-- MEMORY_ONLY
-- CACHE_SAVE_TO_DISK
+  - DISK_ONLY
+  - MEMORY_ONLY
+  - CACHE_SAVE_TO_DISK
 
