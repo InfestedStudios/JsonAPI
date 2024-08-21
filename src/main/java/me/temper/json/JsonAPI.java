@@ -1,6 +1,7 @@
 package me.temper.json;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.Getter;
 import lombok.Setter;
 import me.temper.json.storage.StorageMode;
@@ -28,16 +29,8 @@ import java.util.function.Predicate;
  */
 public class JsonAPI {
 
-    private Gson gson = new Gson();
-    /**
-     * -- GETTER --
-     *  Returns the current storage mode for the API.
-     * -- SETTER --
-     *  Sets the storage mode for the API.
-     *
-     * @param storageMode the storage mode to use
+    private Gson gson;
 
-     */
     @Setter
     @Getter
     private StorageMode storageMode = StorageMode.CACHE_THEN_DISK;
@@ -46,30 +39,24 @@ public class JsonAPI {
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
     private static String basePath = "./"; // Default base path
 
-    @Getter@Setter
+    @Getter
+    @Setter
     public boolean debugMode = false;
 
-
     public JsonAPI(String basePath) {
-        //Implemented fixes for this so it can be used in a plugin
         this.basePath = basePath.endsWith(File.separator) ? basePath : basePath + File.separator; // Ensure basePath ends with separator
         this.executorService = Executors.newCachedThreadPool();
+
+        // Create a custom Gson instance
+        this.gson = new GsonBuilder()
+                .excludeFieldsWithoutExposeAnnotation() // Exclude fields without @Expose annotation
+                .create();
     }
 
-
-    /**
-     * Returns the single instance of the JsonAPI.
-     */
     public static JsonAPI getInstance() {
         return new JsonAPI(basePath);
     }
 
-    /**
-     * Saves data to the specified file name.
-     *
-     * @param fileName the name of the file to save to
-     * @param data the data to save
-     */
     public <T> void store(String fileName, T data, StorageMode storageMode) {
         if (debugMode) {
             System.out.println("Storing data to file: " + fileName + " with storage mode: " + storageMode);
@@ -89,14 +76,6 @@ public class JsonAPI {
         }
     }
 
-    /**
-     * Saves data to the specified file name, applying a validation function and transformation function before saving.
-     *
-     * @param key the key to use for the data
-     * @param data the data to save
-     * @param validator a function that returns true if the data is valid, or false if it is invalid
-     * @param transformBeforeStore a function that transforms the data before saving
-     */
     public <T> void store(String key, T data, Predicate<T> validator, Function<T, T> transformBeforeStore, StorageMode storageMode) {
         if (debugMode) {
             System.out.println("Storing data to file: " + key + " with storage mode: " + storageMode);
@@ -121,14 +100,7 @@ public class JsonAPI {
         }
     }
 
-    /**
-     * Loads data from the specified file name, using the specified type.
-     *
-     * @param fileName the name of the file to load from
-     * @param typeOfT the type of data to load
-     * @param callback a function that is called with the loaded data
-     */
-    public <T> void load(String fileName, Class<T> typeOfT, java.util.function.Consumer<T> callback, StorageMode storageMode) {
+    public <T> void load(String fileName, Class<T> typeOfT, Consumer<T> callback, StorageMode storageMode) {
         if (debugMode) {
             System.out.println("Loading data from file: " + fileName + " with storage mode: " + storageMode);
         }
@@ -147,14 +119,6 @@ public class JsonAPI {
         }
     }
 
-    /**
-     * Loads data from the specified file name, using the specified type, and applies a transformation function to the data after loading.
-     *
-     * @param key the key to use for the data
-     * @param typeOfT the type of data to load
-     * @param transformAfterLoad a function that transforms the data after loading
-     * @return the loaded data
-     */
     public <T> T load(String key, Type typeOfT, Function<T, T> transformAfterLoad, StorageMode storageMode) {
         if (debugMode) {
             System.out.println("Loading data from file: " + key + " with storage mode: " + storageMode);
@@ -178,13 +142,7 @@ public class JsonAPI {
         return transformAfterLoad.apply(data);
     }
 
-    /**
-     * Clears the data for the specified file name.
-     *
-     * @param fileName the name of the file for which to clear data
-     */
     public void clearData(String fileName) {
-
         cache.remove(fileName);
         File file = new File(fileName + ".json");
         if (file.exists()) {
@@ -195,12 +153,6 @@ public class JsonAPI {
         }
     }
 
-    /**
-     * Saves data to a file, using the Gson library for JSON serialization.
-     *
-     * @param fileName the name of the file to save to
-     * @param data the data to save
-     */
     private <T> void saveToFile(String fileName, T data) {
         try {
             String fullPath = basePath + fileName + ".json"; // Construct full path
@@ -217,16 +169,6 @@ public class JsonAPI {
         }
     }
 
-
-
-
-    /**
-     * Saves data to a file asynchronously.
-     *
-     * @param <T>        the type of data to be saved
-     * @param fileName   the name of the file to be saved to
-     * @param data       the data to be saved
-     */
     public <T> void saveAsync(String fileName, T data) {
         if (debugMode) {
             System.out.println("Saving Async data from file: " + fileName + " with storage mode: " + storageMode);
@@ -248,14 +190,6 @@ public class JsonAPI {
         });
     }
 
-    /**
-     * Loads data from a file asynchronously.
-     *
-     * @param <T>           the type of data to be loaded
-     * @param fileName      the name of the file to be loaded from
-     * @param typeOfT       the type of the data to be loaded
-     * @param callback      the callback to be invoked with the loaded data
-     */
     public <T> void loadAsync(String fileName, Type typeOfT, Consumer<T> callback) {
         if (debugMode) {
             System.out.println("Loading Async data from file: " + fileName + " with storage mode: " + storageMode);
@@ -278,11 +212,6 @@ public class JsonAPI {
         });
     }
 
-    /**
-     * Deletes a file asynchronously.
-     *
-     * @param key   the name of the file to be deleted
-     */
     public void deleteAsync(String key) {
         if (debugMode) {
             System.out.println("Cleared Async data from file: " + key + " with storage mode: " + storageMode);
@@ -297,15 +226,6 @@ public class JsonAPI {
         });
     }
 
-
-
-
-    /**
-     * Saves a version of the specified data to the data manager.
-     * @param <T> the type of data to save
-     * @param fileName the name of the file
-     * @param jsonData the JSON data to save
-     */
     public static <T> void saveVersion(String fileName, T jsonData) {
         try {
             String versionTimestamp = dateFormat.format(new Date());
@@ -321,12 +241,6 @@ public class JsonAPI {
         }
     }
 
-    //Need a method to deleteVersion
-
-    /**
-     *
-     * @param fileName the name of the file to delete
-     */
     public static void deleteVersion(String fileName) {
         try {
             String versionTimestamp = dateFormat.format(new Date());
@@ -334,10 +248,20 @@ public class JsonAPI {
             String fullPath = basePath + "versions/" + versionedFileName; // Adjust for version saving
             File versionDir = new File(basePath + "versions/");
             if (versionDir.exists()) {
-                versionDir.delete();
+                for (File file : versionDir.listFiles()) {
+                    if (file.getName().startsWith(fileName)) {
+                        file.delete();
+                    }
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void logDebug(String message) {
+        if (debugMode) {
+            System.out.println(message);
         }
     }
 }
