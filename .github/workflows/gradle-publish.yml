@@ -1,5 +1,5 @@
 name: Java CI with Gradle
-# Sad
+# Still not working properly
 on:
   push:
     branches: [ "master" ]
