@@ -1,4 +1,4 @@
-package me.temper.json.util;
+package org.infestedstudios.json.util;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;

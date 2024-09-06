@@ -1,4 +1,4 @@
-package me.temper.json.storage;
+package org.infestedstudios.json.storage;
 
 public enum StorageMode {
     MEMORY_ONLY,
