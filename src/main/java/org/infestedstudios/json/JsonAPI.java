@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 /**
  * A JSON API that provides methods for saving and loading data to and from JSON files.
  * The API supports caching data in memory and on disk, and provides methods for validating and transforming data before saving.
+ * The API also supports asynchronous saving and loading of data.
  */
 public class JsonAPI {
 
